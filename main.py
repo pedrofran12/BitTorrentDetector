@@ -21,3 +21,7 @@ while True:
 
 '''capture'''
 print 'got intended capture'
+
+for packet in capture.sniff_continuously():
+    if(packet.frame_info.protocols.find('bittorrent') > 0):
+        print 'Bittorrent packet found! - hash:', packet.bittorrent.info_hash.replace(':', '')
