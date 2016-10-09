@@ -1,0 +1,4 @@
+pyshark
+BeautifulSoup4
+PrettyTable
+netifaces
