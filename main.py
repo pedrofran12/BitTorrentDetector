@@ -3,6 +3,8 @@ import socket
 import netifaces
 import os.path
 import urllib2
+import signal
+import sys
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
 
@@ -39,11 +41,18 @@ def getPacketInfoHash(packet):
 def getFileDescription(info_hash):
     if info_hash == '?':
         return '?'
-    url = "https://isohunt.to/torrents/?ihq=" + info_hash
-    html = urllib2.urlopen(url).read()
+    url = "https://isohunt.bypassed.pw/torrents/?ihq=" + info_hash
+    hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11'}
+    html = urllib2.urlopen(urllib2.Request(url, headers=hdr)).read()
     return BeautifulSoup(html, "html.parser").title.string.replace(" torrent on isoHunt", "")
 
 
+def signal_handler(signal, frame):
+    sys.exit(0)
+
+
+
+signal.signal(signal.SIGINT, signal_handler)
 while True:
     detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
     if detectionType == '1':
@@ -63,3 +72,6 @@ for packet in capture:
         t.add_row(getPacketInfo(packet))
         os.system('clear')
         print t
+
+
+signal.pause()
