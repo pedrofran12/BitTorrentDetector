@@ -49,20 +49,32 @@ def getPacketInfoHash(packet):
 def getFileDescription(info_hash):
     if info_hash == '?':
         return '?'
-    url = "https://isohunt.bypassed.pw/torrents/?ihq=" + info_hash
-    hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11'}
-    html = urllib2.urlopen(urllib2.Request(url, headers=hdr)).read()
-    title = BeautifulSoup(html, "html.parser").title.string.replace(" torrent on isoHunt", "")
-    if(title.lower().find(info_hash.lower())>=0):
+    try:
+        url = "https://isohunt.bypassed.pw/torrents/?ihq=" + info_hash
+        hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11'}
+        html = urllib2.urlopen(urllib2.Request(url, headers=hdr)).read()
+        title = BeautifulSoup(html, "html.parser").title.string.replace(" torrent on isoHunt", "")
+        if(title.lower().find(info_hash.lower())>=0):
+            return '?'
+        return title
+    except:
         return '?'
-    return title
 
+def handleTable(packet):
+    global detections
+    packetInfo = getPacketInfo(packet)
+    packetDetection = (packetInfo[0], packetInfo[3])
+    if(packetDetection not in detections):
+        detections.append(packetDetection)
+        t.add_row(packetInfo)
+    return
 
 def signal_handler(signal, frame):
     sys.exit(0)
 
 
 
+detections = []
 signal.signal(signal.SIGINT, signal_handler)
 while True:
     detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
@@ -80,7 +92,8 @@ t = PrettyTable(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date']
 print(t)
 for packet in capture:
     if(packet.frame_info.protocols.find('bittorrent') > 0):
-        t.add_row(getPacketInfo(packet))
+        #t.add_row(getPacketInfo(packet))
+        handleTable(packet)
         os.system('clear')
         print(t)
 
