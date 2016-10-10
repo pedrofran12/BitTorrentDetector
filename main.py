@@ -9,6 +9,14 @@ from bs4 import BeautifulSoup
 from prettytable import PrettyTable
 
 
+def getInterfaces():
+    interfaces = netifaces.interfaces()
+    for i in range(len(interfaces))[::-1]:
+        if(netifaces.AF_INET not in netifaces.ifaddresses(interfaces[i])):
+            del interfaces[i]
+    return interfaces;
+
+
 def getFileCapture():
     isFile = False
     while (not isFile):
@@ -56,7 +64,7 @@ signal.signal(signal.SIGINT, signal_handler)
 while True:
     detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
     if detectionType == '1':
-        capture = pyshark.LiveCapture(interface=netifaces.interfaces())
+        capture = pyshark.LiveCapture(interface=getInterfaces())
         capture.sniff_continuously()
         break
     elif detectionType == '2':
