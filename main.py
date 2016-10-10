@@ -14,7 +14,7 @@ def getInterfaces():
     for i in range(len(interfaces))[::-1]:
         if(netifaces.AF_INET not in netifaces.ifaddresses(interfaces[i])):
             del interfaces[i]
-    return interfaces;
+    return interfaces
 
 
 def getFileCapture():
@@ -52,7 +52,10 @@ def getFileDescription(info_hash):
     url = "https://isohunt.bypassed.pw/torrents/?ihq=" + info_hash
     hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11'}
     html = urllib2.urlopen(urllib2.Request(url, headers=hdr)).read()
-    return BeautifulSoup(html, "html.parser").title.string.replace(" torrent on isoHunt", "")
+    title = BeautifulSoup(html, "html.parser").title.string.replace(" torrent on isoHunt", "")
+    if(title.lower().find(info_hash.lower())>=0):
+        return '?'
+    return title
 
 
 def signal_handler(signal, frame):
@@ -74,12 +77,12 @@ while True:
 
 os.system('clear')
 t = PrettyTable(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date'])
-print t
+print(t)
 for packet in capture:
     if(packet.frame_info.protocols.find('bittorrent') > 0):
         t.add_row(getPacketInfo(packet))
         os.system('clear')
-        print t
+        print(t)
 
 
 signal.pause()
