@@ -7,6 +7,14 @@ import signal
 import sys
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
+import thread
+import readline, glob
+def complete(text, state):
+    return (glob.glob(text+'*')+[None])[state]
+
+readline.set_completer_delims(' \t\n;')
+readline.parse_and_bind("tab: complete")
+readline.set_completer(complete)
 
 
 def getInterfaces():
@@ -27,7 +35,7 @@ def getFileCapture():
 
 def getPacketInfo(packet):
     ip = getIpInfo(packet)
-    mac = packet.eth.dst.show
+    mac = getMacInfo(packet)
     date = packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S")
     info_hash = getPacketInfoHash(packet)
     torrentInfo = getFileDescription(info_hash)
@@ -38,6 +46,13 @@ def getIpInfo(packet):
         return packet.ip.dst.show
     except Exception:
         return packet.ipv6.dst.show
+
+def getMacInfo(paket):
+    try:
+        return packet.eth.dst.show
+    except Exception:
+        return '?'
+
 
 def getHostNameByIp(ip):
     try:
@@ -73,9 +88,15 @@ def handleTable(packet):
     if(packetDetection not in detections):
         detections.append(packetDetection)
         t.add_row(packetInfo)
+        os.system('clear')
+        print(t)
     return
 
 def signal_handler(signal, frame):
+    global t
+    target = open('log.txt', 'w')
+    target.write(t.get_string())
+    target.close()
     sys.exit(0)
 
 
@@ -98,10 +119,12 @@ t = PrettyTable(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date']
 print(t)
 for packet in capture:
     if(packet.frame_info.protocols.find('bittorrent') > 0):
-        #t.add_row(getPacketInfo(packet))
-        handleTable(packet)
-        os.system('clear')
-        print(t)
-
+        #handleTable(packet)
+        #os.system('clear')
+        #print(t)
+        thread.start_new_thread ( handleTable, (packet,) )
 
 signal.pause()
+saveLog = open('log.txt', 'w')
+saveLog.write(t.get_string())
+saveLog.close()
