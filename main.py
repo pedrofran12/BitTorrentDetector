@@ -26,12 +26,18 @@ def getFileCapture():
 
 
 def getPacketInfo(packet):
-    ip = packet.ip.dst.show
+    ip = getIpInfo(packet)
     mac = packet.eth.dst.show
     date = packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S")
     info_hash = getPacketInfoHash(packet)
     torrentInfo = getFileDescription(info_hash)
     return [ip, mac, getHostNameByIp(ip), info_hash, torrentInfo, date]
+
+def getIpInfo(packet):
+    try:
+        return packet.ip.dst.show
+    except Exception:
+        return packet.ipv6.dst.show
 
 def getHostNameByIp(ip):
     try:
