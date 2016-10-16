@@ -16,7 +16,13 @@ for packet in capture.sniff_continuously(packet_count=5):
 # detectar bittorrent e imprimir
 netifaces.interfaces()
 def get_subnet_address (ip, mask):
-    return '192.168.1.0'
+    ip_split = ip.split('.')
+    mask_split = mask.split('.')
+    result = []
+    for i in range(4):
+        num = int(ip_split[i]) & int(mask_split[i])
+        result = result + [str(num)]
+    return result[0]+'.'+result[1]+'.'+result[2]+'.'+result[3]
 
 def get_ip_and_mac_based_on_network (packet):
     inter = netifaces.ifaddresses(interface_check)[2][0]
@@ -34,7 +40,7 @@ def get_ip_and_mac_based_on_network (packet):
     elif subnet == get_subnet_address(dst_ip, mask):
         return (dst_ip, dst_mac)
     else:
-        return (src_ip + ' or ' + dst_ip, src_mac + ' or ' + dst_mac)
+        return ('?', '?')
 
 isLive = True
 def print_bittorrent_info (packet):
@@ -42,7 +48,14 @@ def print_bittorrent_info (packet):
     (ip, mac) = get_ip_and_mac_based_on_network (packet)
     print "Destination IP:", ip
     print "Destination MAC:", mac
-    print "Host name:", socket.gethostbyaddr(ip)[0]
+    if ip != '?':
+        try:
+            name = socket.gethostbyaddr(ip)[0]
+            print "Host name:", name
+        except:
+            print "Host name: ?"
+    else:
+        print "Host name: ?"
     print "BitTorrent hash:", packet.bittorrent.info_hash.replace(':', '')
     print "Date:", packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S")
 
