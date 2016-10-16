@@ -25,7 +25,8 @@ class BitTorrentList (object):
         self._list = dict()
         self.size = 0
 
-
+    def __len__(self):
+        return self.size
 
     """
     'private' functions
@@ -67,21 +68,24 @@ class BitTorrentList (object):
     'public' functions
     """
     def add(self, packet):
-        (ip, mac, host) = _get_packet_ip_mac_host(packet, SRC)
-        if ip not in self._list:
-            self._list[ip] = (mac, host, {})
-        packet_hash = _get_packet_hash(packet)
-        if packet_hash not in self._list[ip][HASHES]:
-            self._list[ip][packet_hash] = {}
-        dst_ip = _get_packet_ip(packet, DST)
-        date = _get_packet_date(packet)
-        if dst_ip not in self._list[ip][packet_hash]:
-            self._list[ip][packet_hash][dst_ip] = (date, date)
-        self._list[ip][packet_hash][dst_ip][1] = date
-        self.size = self.size + 1;
-
-    def size(self):
-        return self._size
+        try:
+            if (packet.frame_info.protocols.find(FILTER) > 0):
+                print "entrou"
+                (ip, mac, host) = _get_packet_ip_mac_host(packet, SRC)
+                if (ip not in self._list):
+                    self._list[ip] = (mac, host, {})
+                packet_hash = _get_packet_hash(packet)
+                if (packet_hash not in self._list[ip][HASHES]):
+                    self._list[ip][packet_hash] = {}
+                dst_ip = _get_packet_ip(packet, DST)
+                date = _get_packet_date(packet)
+                if (dst_ip not in self._list[ip][packet_hash]):
+                    self._list[ip][packet_hash][dst_ip] = (date, date)
+                self._list[ip][packet_hash][dst_ip][1] = date
+                self.size = self.size + 1;
+                print "Found bittorrent!"
+        except:
+            return
 
     def clear(self):
         self._list = dict()
@@ -106,5 +110,3 @@ class BitTorrentList (object):
                 src_ips = hashes_list[j]
                 for k in src_ips:
                     print i + '\t' + j + '\t' + k + '\tfrom: ' + src_ips[k][0] + ' to: ' + src_ips[k][1]
-
-    def _test_self_fill(self, num_packets=10):

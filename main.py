@@ -1,12 +1,9 @@
-import pyshark
+import pyshark_ext as pyshark
 import socket
 import netifaces
 import os.path
-import urllib2
 import signal
 import sys
-from bs4 import BeautifulSoup
-from prettytable import PrettyTable
 import thread
 import readline, glob
 def complete(text, state):
@@ -32,71 +29,7 @@ def getFileCapture():
         isFile = os.path.isfile(fileName)
     return fileName
 
-
-def getPacketInfo(packet):
-    ip = getIpInfo(packet)
-    mac = getMacInfo(packet)
-    date = packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S")
-    info_hash = getPacketInfoHash(packet)
-    torrentInfo = getFileDescription(info_hash)
-    return [ip, mac, getHostNameByIp(ip), info_hash, torrentInfo, date]
-
-def getIpInfo(packet):
-    try:
-        return packet.ip.dst.show
-    except Exception:
-        return packet.ipv6.dst.show
-
-def getMacInfo(paket):
-    try:
-        return packet.eth.dst.show
-    except Exception:
-        return '?'
-
-
-def getHostNameByIp(ip):
-    try:
-        return socket.gethostbyaddr(ip)[0]
-    except:
-        return '?'
-
-def getPacketInfoHash(packet):
-    try:
-        return packet.bittorrent.info_hash.replace(':', '')
-    except:
-        return '?'
-
-
-def getFileDescription(info_hash):
-    if info_hash == '?':
-        return '?'
-    try:
-        url = "https://isohunt.bypassed.pw/torrents/?ihq=" + info_hash
-        hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11'}
-        html = urllib2.urlopen(urllib2.Request(url, headers=hdr)).read()
-        title = BeautifulSoup(html, "html.parser").title.string.replace(" torrent on isoHunt", "")
-        if(title.lower().find(info_hash.lower())>=0):
-            return '?'
-        return title
-    except:
-        return '?'
-
-def handleTable(packet):
-    global detections
-    packetInfo = getPacketInfo(packet)
-    packetDetection = (packetInfo[0], packetInfo[3])
-    if(packetDetection not in detections):
-        detections.append(packetDetection)
-        t.add_row(packetInfo)
-        os.system('clear')
-        print(t)
-    return
-
 def signal_handler(signal, frame):
-    global t
-    target = open('log.txt', 'w')
-    target.write(t.get_string())
-    target.close()
     sys.exit(0)
 
 
@@ -113,18 +46,13 @@ while True:
         capture = pyshark.FileCapture(getFileCapture())
         break
 
-
-os.system('clear')
-t = PrettyTable(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date'])
-print(t)
+print getInterfaces()
+bitList = pyshark.BitTorrentList()
 for packet in capture:
-    if(packet.frame_info.protocols.find('bittorrent') > 0):
-        #handleTable(packet)
-        #os.system('clear')
-        #print(t)
-        thread.start_new_thread ( handleTable, (packet,) )
+    bitList.add(packet)
+    if len(bitList) >= 10:
+        break
+
+bitList._test_print_host_info()
 
 signal.pause()
-saveLog = open('log.txt', 'w')
-saveLog.write(t.get_string())
-saveLog.close()
