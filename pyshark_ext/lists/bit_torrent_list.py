@@ -32,35 +32,51 @@ class BitTorrentList (object):
     'private' functions
     if something is wrong, it might be on those functions
     """
-    def _get_packet_ip(packet, tag):
+    def _get_packet_ip(self, packet, tag):
         try:
-            return dict(SRC=packet.ip.src, DST=packet.ip.dst)[tag]
+            if tag == self.SRC:
+                return packet.ip.src
+            elif tag == self.DST:
+                return packet.ip.dst
+            else:
+                return self.UNKNOWN
         except:
-            return UNKNOWN
+            return self.UNKNOWN
 
-    def _get_packet_mac(packet, tag):
+    def _get_packet_mac(self, packet, tag):
         try:
-            return dict(SRC=packet.eth.src, DST=packet.eth.dst)[tag]
+            if tag == self.SRC:
+                return packet.eth.src
+            elif tag == self.DST:
+                return packet.eth.dst
+            else:
+                return self.UNKNOWN
         except:
-            return UNKNOWN
+            return self.UNKNOWN
 
-    def _get_host_by_ip(ip):
+    def _get_host_by_ip(self, ip):
         try:
             return socket.gethostbyaddr(ip)[0]
         except:
-            return UNKNOWN
+            return self.UNKNOWN
 
-    def _get_packet_ip_mac_host(packet, tag):
-        ip = _get_packet_ip(packet, tag)
-        mac = _get_packet_mac(packet, tag)
-        host = _get_host_by_ip(ip)
+    def _get_packet_ip_mac_host(self, packet, tag):
+        ip = self._get_packet_ip(packet, tag)
+        mac = self._get_packet_mac(packet, tag)
+        host = self._get_host_by_ip(ip)
         return (ip, mac, host)
 
-    def _get_packet_hash(packet):
-        return packet.bittorrent.info_hash.replace(':', '')
+    def _get_packet_hash(self, packet):
+        try:
+            return packet.bittorrent.info_hash.replace(':', '')
+        except:
+            return self.UNKNOWN
 
-    def _get_packet_date(packet):
-        return packet.sniff_time.strftime(DATE_FORMAT)
+    def _get_packet_date(self, packet):
+        try:
+            return packet.sniff_time.strftime(self.DATE_FORMAT)
+        except:
+            return self.UNKNOWN
 
 
 
@@ -68,24 +84,20 @@ class BitTorrentList (object):
     'public' functions
     """
     def add(self, packet):
-        try:
-            if (packet.frame_info.protocols.find(FILTER) > 0):
-                print "entrou"
-                (ip, mac, host) = _get_packet_ip_mac_host(packet, SRC)
-                if (ip not in self._list):
-                    self._list[ip] = (mac, host, {})
-                packet_hash = _get_packet_hash(packet)
-                if (packet_hash not in self._list[ip][HASHES]):
-                    self._list[ip][packet_hash] = {}
-                dst_ip = _get_packet_ip(packet, DST)
-                date = _get_packet_date(packet)
-                if (dst_ip not in self._list[ip][packet_hash]):
-                    self._list[ip][packet_hash][dst_ip] = (date, date)
-                self._list[ip][packet_hash][dst_ip][1] = date
-                self.size = self.size + 1;
-                print "Found bittorrent!"
-        except:
-            return
+        if (packet.frame_info.protocols.find('bittorrent') > 0):
+            (ip, mac, host) = self._get_packet_ip_mac_host(packet, self.SRC)
+            if (ip not in self._list):
+                self._list[ip] = (mac, host, {})
+            packet_hash = self._get_packet_hash(packet)
+            if (packet_hash not in self._list[ip][self.HASHES]):
+                self._list[ip][self.HASHES][packet_hash] = {}
+            dst_ip = self._get_packet_ip(packet, self.DST)
+            date = self._get_packet_date(packet)
+            if (dst_ip not in self._list[ip][self.HASHES][packet_hash]):
+                self._list[ip][self.HASHES][packet_hash][dst_ip] = [date, date]
+            self._list[ip][self.HASHES][packet_hash][dst_ip][1] = date
+            self.size = self.size + 1;
+            print "Added bittorrent!", self.size
 
     def clear(self):
         self._list = dict()
@@ -97,15 +109,15 @@ class BitTorrentList (object):
     test functions
     """
     def _test_print_host_info(self):
-        print 'IP:\t\tMAC:\t\tHOST NAME:'
+        print 'IP:\t\tMAC:\t\t\tHOST NAME:'
         for i in self._list:
             info_list = self._list[i]
-            print i + '\t' + info_list[MAC] + '\t' + info_list[HOSTNAME]
+            print i + '\t' + info_list[self.MAC] + '\t' + info_list[self.HOSTNAME]
 
-    def _test_print_recieved_hashes(sefl):
-        print 'IP:\t\tHASH:\t\tSRC:'
+    def _test_print_recieved_hashes(self):
+        print 'IP:\t\tHASH:\t\t\t\t\tSRC:'
         for i in self._list:
-            hashes_list = self._list[i][HASHES]
+            hashes_list = self._list[i][self.HASHES]
             for j in hashes_list:
                 src_ips = hashes_list[j]
                 for k in src_ips:

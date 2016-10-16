@@ -39,7 +39,8 @@ signal.signal(signal.SIGINT, signal_handler)
 while True:
     detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
     if detectionType == '1':
-        capture = pyshark.LiveCapture(interface=getInterfaces())
+        #capture = pyshark.LiveCapture(interface=getInterfaces())
+        capture = pyshark.LiveCapture(interface='enp0s3')
         capture.sniff_continuously()
         break
     elif detectionType == '2':
@@ -49,7 +50,8 @@ while True:
 print getInterfaces()
 bitList = pyshark.BitTorrentList()
 for packet in capture:
-    bitList.add(packet)
+    if (packet.frame_info.protocols.find('bittorrent') > 0):
+        bitList.add(packet)
     if len(bitList) >= 10:
         break
 
