@@ -42,9 +42,15 @@ class BitTorrentList (object):
     def _get_packet_ip(self, packet, tag):
         try:
             if tag == self.SRC:
-                return packet.ip.src
+                try:
+                    return packet.ip.src
+                except:
+                    return packet.ipv6.src
             elif tag == self.DST:
-                return packet.ip.dst
+                try:
+                    return packet.ip.dst
+                except:
+                    return packet.ipv6.dst
             else:
                 return self.UNKNOWN
         except:
