@@ -1,6 +1,13 @@
 import socket
 import netifaces
 
+def getInterfaces():
+    interfaces = netifaces.interfaces()
+    for i in range(len(interfaces))[::-1]:
+        if neticafes.AF_INET not in netifaces.ifaddresses(interfaces[i]):
+            del interfaces[i]
+    return interfaces
+
 """
 Costume list to store bittorrent trafic
 """
