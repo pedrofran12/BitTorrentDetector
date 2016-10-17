@@ -5,6 +5,7 @@ import os.path
 import urllib2
 import signal
 import sys
+from BitTorrentDB import BitTorrentDB
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
 import thread
@@ -34,22 +35,39 @@ def getFileCapture():
 
 
 def getPacketInfo(packet):
-    ip = getIpInfo(packet)
-    mac = getMacInfo(packet)
+    [ip, mac] = getIpInfo(packet)
+    #ip = getIpInfo(packet)
+    #mac = getMacInfo(packet)
     date = packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S")
     info_hash = getPacketInfoHash(packet)
     torrentInfo = getFileDescription(info_hash)
     return [ip, mac, getHostNameByIp(ip), info_hash, torrentInfo, date]
 
 def getIpInfo(packet):
+    ip_src = ''
+    ip_dst = ''
     try:
-        return packet.ip.dst.show
+        ip_src = packet.ip.src.show
+        ip_dst = packet.ip.dst.show
     except Exception:
-        return packet.ipv6.dst.show
+        ip_src = packet.ipv6.src.show
+        ip_dst = packet.ipv6.dst.show
+    global db
+    ip_generator = db.get_ip_generator_of_traffic(ip_src, ip_dst)
+    if(ip_generator==ip_src):
+        return [ip_generator, getMacInfo(packet, 'SRC')]
+    else:
+        return [ip_generator, getMacInfo(packet, 'DST')]
 
-def getMacInfo(paket):
+
+def getMacInfo(paket, origin):
     try:
-        return packet.eth.dst.show
+        if(origin=='SRC'):
+            return packet.eth.src.show
+        elif(origin=='DST'):
+            return packet.eth.dst.show
+        else:
+            return '?'
     except Exception:
         return '?'
 
@@ -113,16 +131,15 @@ while True:
         capture = pyshark.FileCapture(getFileCapture())
         break
 
-
+db = BitTorrentDB()
 os.system('clear')
 t = PrettyTable(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date'])
 print(t)
 for packet in capture:
+    db.add_info_table(packet)
     if(packet.frame_info.protocols.find('bittorrent') > 0):
-        #handleTable(packet)
-        #os.system('clear')
-        #print(t)
-        thread.start_new_thread ( handleTable, (packet,) )
+        handleTable(packet)
+        #thread.start_new_thread ( handleTable, (packet,) )
 
 signal.pause()
 saveLog = open('log.txt', 'w')

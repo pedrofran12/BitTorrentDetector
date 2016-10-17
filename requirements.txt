@@ -2,4 +2,3 @@ pyshark
 BeautifulSoup4
 PrettyTable
 netifaces
-urllib2
