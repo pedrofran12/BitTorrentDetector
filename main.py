@@ -35,13 +35,15 @@ def getFileCapture():
 
 
 def getPacketInfo(packet):
-    [ip, mac] = getIpInfo(packet)
-    #ip = getIpInfo(packet)
-    #mac = getMacInfo(packet)
-    date = packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S")
     info_hash = getPacketInfoHash(packet)
-    torrentInfo = getFileDescription(info_hash)
-    return [ip, mac, getHostNameByIp(ip), info_hash, torrentInfo, date]
+    if(info_hash!='?'):
+        [ip, mac] = getIpInfo(packet)
+        date = packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S")
+        torrentInfo = getFileDescription(info_hash)
+        return [ip, mac, getHostNameByIp(ip), info_hash, torrentInfo, date]
+    else:
+        raise Exception('Bittorrent packet without hash!')
+
 
 def getIpInfo(packet):
     ip_src = ''
@@ -101,7 +103,10 @@ def getFileDescription(info_hash):
 
 def handleTable(packet):
     global detections
-    packetInfo = getPacketInfo(packet)
+    try:
+        packetInfo = getPacketInfo(packet)
+    except Exception:
+        return;
     packetDetection = (packetInfo[0], packetInfo[3])
     if(packetDetection not in detections):
         detections.append(packetDetection)
