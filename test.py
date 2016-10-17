@@ -1,27 +1,32 @@
 import pyshark_ext as pyshark
+import pyshark_ext.network.get as get
+import signal
 
-interface_check = 'enp0s3'
+def signal_handler(signal, frame):
+    sys.exit(0)
 
-'''
-capture = pyshark.LiveCapture(interface='enp0s3')
-capture.sniff(timeout=50)
-capture
+interface_check = get.get_interfaces()
 
-for packet in capture.sniff_continuously(packet_count=5):
-        print 'Just arrived:', packet
-'''
+bitList = pyshark.BitTorrentList(packets_limit = 50)
 
-capture = pyshark.LiveCapture(interface=interface_check)
-# capture.apply_on_packets(packet_captured)
-capture.sniff(timeout=50)
-#capture.apply_on_packets(print_bittorrent_info)
+detections = []
+signal.signal(signal.SIGINT, signal_handler)
+while True:
+    detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
+    if detectionType == '1':
+        capture = pyshark.LiveCapture(interface=interface_check)
+        capture.sniff_continuously()
+        break
+    elif detectionType == '2':
+        capture = pyshark.FileCapture(getFileCapture())
+        break
 
-
-bitList = pyshark.BitTorrentList()
 for packet in capture:
     bitList.add(packet)
-    if len(bitList) >= 100:
+    if (not bitList.is_running()):
         break
+capture.close()
+
 print "\n\n\nHOST INFO"
 bitList._test_print_host_info()
 

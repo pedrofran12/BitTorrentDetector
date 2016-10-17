@@ -1,12 +1,72 @@
 import socket
-import netifaces
+import pyshark_ext.network.subnet_verify as net
 
-def getInterfaces():
-    interfaces = netifaces.interfaces()
-    for i in range(len(interfaces))[::-1]:
-        if neticafes.AF_INET not in netifaces.ifaddresses(interfaces[i]):
-            del interfaces[i]
-    return interfaces
+""" constant variables """
+UNKNOWN = '?'
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S:%f"
+FILTER = 'bittorrent'
+DST = 10
+SRC = 11
+BOTH = 12
+
+"""
+'private' functions
+if something is wrong, it might be on those functions
+"""
+def _get_ips_info(packet):
+    return
+
+def _get_packet_ip(packet, tag):
+    try:
+        if tag == SRC:
+            try:
+                return packet.ip.src
+            except:
+                return packet.ipv6.src
+        elif tag == DST:
+            try:
+                return packet.ip.dst
+            except:
+                return packet.ipv6.dst
+        else:
+            return UNKNOWN
+    except:
+        return UNKNOWN
+
+def _get_packet_mac(packet, tag):
+    try:
+        if tag == SRC:
+            return packet.eth.src
+        elif tag == DST:
+            return packet.eth.dst
+        else:
+            return UNKNOWN
+    except:
+        return UNKNOWN
+
+def _get_host_by_ip(ip):
+    try:
+        return socket.gethostbyaddr(ip)[0]
+    except:
+        return UNKNOWN
+
+def _get_packet_ip_mac_host(packet, tag):
+    ip = _get_packet_ip(packet, tag)
+    mac = _get_packet_mac(packet, tag)
+    host = _get_host_by_ip(ip)
+    return (ip, mac, host)
+
+def _get_packet_hash(packet):
+    try:
+        return packet.bittorrent.info_hash.replace(':', '')
+    except:
+        return UNKNOWN
+
+def _get_packet_date(packet):
+    try:
+        return packet.sniff_time.strftime(DATE_FORMAT)
+    except:
+        return UNKNOWN
 
 """
 Costume list to store bittorrent trafic
@@ -15,106 +75,55 @@ class BitTorrentList (object):
 
     """ indexes """
     MAC = 0;
-    HOSTNAME = 1;
+    HOST = 1;
     HASHES = 2;
 
-    """ variables """
-    UNKNOWN = '?'
-    SRC = 101
-    DST = 102
-    DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-    FILTER = 'bittorrent'
-
-
-
     """ BEGIN """
-    def __init__(self):
+    def __init__(self, packets_limit=-1, live_capture=False):
         self._list = dict()
         self.size = 0
+        self.statistic_id = 0
+        self.packets_limit = packets_limit
+        self.live_capture = live_capture
+        self.running = self.size != self.packets_limit
 
     def __len__(self):
         return self.size
 
     """
-    'private' functions
-    if something is wrong, it might be on those functions
-    """
-    def _get_packet_ip(self, packet, tag):
-        try:
-            if tag == self.SRC:
-                try:
-                    return packet.ip.src
-                except:
-                    return packet.ipv6.src
-            elif tag == self.DST:
-                try:
-                    return packet.ip.dst
-                except:
-                    return packet.ipv6.dst
-            else:
-                return self.UNKNOWN
-        except:
-            return self.UNKNOWN
-
-    def _get_packet_mac(self, packet, tag):
-        try:
-            if tag == self.SRC:
-                return packet.eth.src
-            elif tag == self.DST:
-                return packet.eth.dst
-            else:
-                return self.UNKNOWN
-        except:
-            return self.UNKNOWN
-
-    def _get_host_by_ip(self, ip):
-        try:
-            return socket.gethostbyaddr(ip)[0]
-        except:
-            return self.UNKNOWN
-
-    def _get_packet_ip_mac_host(self, packet, tag):
-        ip = self._get_packet_ip(packet, tag)
-        mac = self._get_packet_mac(packet, tag)
-        host = self._get_host_by_ip(ip)
-        return (ip, mac, host)
-
-    def _get_packet_hash(self, packet):
-        try:
-            return packet.bittorrent.info_hash.replace(':', '')
-        except:
-            return self.UNKNOWN
-
-    def _get_packet_date(self, packet):
-        try:
-            return packet.sniff_time.strftime(self.DATE_FORMAT)
-        except:
-            return self.UNKNOWN
-
-
-
-    """
     'public' functions
     """
+    def _add_entrance(self, packet, tuple_info):
+        _get_ips_info()
+
     def add(self, packet):
-        if (packet.frame_info.protocols.find('bittorrent') > 0):
-            (ip, mac, host) = self._get_packet_ip_mac_host(packet, self.SRC)
+        if (packet.frame_info.protocols.find('bittorrent') > 0) and \
+            self.running:
+            (ip, mac, host) = _get_packet_ip_mac_host(packet, SRC)
             if (ip not in self._list):
-                self._list[ip] = (mac, host, {})
-            packet_hash = self._get_packet_hash(packet)
+                self._list[ip] = [mac, host, {}]
+            if (self._list[ip][self.MAC] == UNKNOWN):
+                self._list[ip][self.MAC] = mac
+            if (self._list[ip][self.HOST] == UNKNOWN):
+                self._list[ip][self.HOST] = host
+            packet_hash = _get_packet_hash(packet)
             if (packet_hash not in self._list[ip][self.HASHES]):
                 self._list[ip][self.HASHES][packet_hash] = {}
-            dst_ip = self._get_packet_ip(packet, self.DST)
-            date = self._get_packet_date(packet)
+            dst_ip = _get_packet_ip(packet, DST)
+            date = _get_packet_date(packet)
             if (dst_ip not in self._list[ip][self.HASHES][packet_hash]):
                 self._list[ip][self.HASHES][packet_hash][dst_ip] = [date, date]
             self._list[ip][self.HASHES][packet_hash][dst_ip][1] = date
             self.size = self.size + 1;
+            self.running = self.size != self.packets_limit
             print "Added bittorrent!", self.size
 
     def clear(self):
         self._list = dict()
         self.size = 0
+
+    def is_running(self):
+        return self.running
 
 
 
@@ -125,7 +134,7 @@ class BitTorrentList (object):
         print 'IP:\t\tMAC:\t\t\tHOST NAME:'
         for i in self._list:
             info_list = self._list[i]
-            print i + '\t' + info_list[self.MAC] + '\t' + info_list[self.HOSTNAME]
+            print i + '\t' + info_list[self.MAC] + '\t' + info_list[self.HOST]
 
     def _test_print_recieved_hashes(self):
         print 'IP:\t\tHASH:\t\t\t\t\tSRC:'

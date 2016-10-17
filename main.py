@@ -50,8 +50,7 @@ while True:
 print getInterfaces()
 bitList = pyshark.BitTorrentList()
 for packet in capture:
-    if (packet.frame_info.protocols.find('bittorrent') > 0):
-        bitList.add(packet)
+    bitList.add(packet)
     if len(bitList) >= 10:
         break
 
