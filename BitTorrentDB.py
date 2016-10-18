@@ -14,7 +14,6 @@ class BitTorrentDB:
         self.cursor.execute("CREATE TABLE packets (ip_src text, ip_dst text,port_src text, port_dst text, packet_size text, data text);")
 
     def add_info_table(self, packet):
-        ## fazer try para n crashar
         port_src = '0'
         port_dst = '0'
         packet_length = '0'
@@ -35,10 +34,13 @@ class BitTorrentDB:
             print row
 
     def get_ip_generator_of_traffic(self, ip1, ip2):
-        print 'entered'
-        print ip1
-        print ip2
         query = "SELECT D.IP FROM ( SELECT C.IP, COUNT(C.IP) AS COUNT FROM ( SELECT A.ip_src AS IP, A.data FROM packets A WHERE A.ip_src=? UNION SELECT B.ip_dst AS IP, B.data FROM packets B WHERE B.ip_dst=? ) AS C GROUP BY C.IP ) AS D WHERE D.COUNT=( SELECT MAX(H.COUNT) FROM ( SELECT COUNT(G.IP) AS COUNT FROM ( SELECT E.ip_src AS IP, E.data FROM packets E WHERE E.ip_src=? UNION SELECT F.ip_dst AS IP, F.data FROM packets F WHERE F.ip_dst=? ) AS G GROUP BY G.IP ) AS H)"
-        for row in self.cursor.execute(query, (ip1, ip2, ip1, ip2)):
+        response = self.cursor.execute(query, (ip1, ip2, ip1, ip2)).fetchall()
+        if(len(response) == 1):
+            #Just one answer from DB
+            return response[0][0]
+        raise Exception('2 ips equally frequent')
+'''        for row in response:
             print row
             return row[0]
+'''
