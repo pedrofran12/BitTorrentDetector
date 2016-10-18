@@ -15,19 +15,20 @@ class BitTorrentDB:
 
     def add_info_table(self, packet):
         ## fazer try para n crashar
+        port_src = '0'
+        port_dst = '0'
+        packet_length = '0'
+        date = str(packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S"))
         try:
             ip_src = packet.ip.src.show
             ip_dst = packet.ip.dst.show
-            port_src = '0'
-            port_dst = '0'
-            packet_length = '0'
-            date = str(packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S"))
-            self.cursor.execute('INSERT INTO packets VALUES (?,?,?,?,?,?)', (ip_src, ip_dst, port_src, port_dst, packet_length, date))
-            self.connection.commit()
         except Exception:
-            pass
+            ip_src = packet.ipv6.src.show
+            ip_dst = packet.ipv6.dst.show
+        self.cursor.execute('INSERT INTO packets VALUES (?,?,?,?,?,?)', (ip_src, ip_dst, port_src, port_dst, packet_length, date))
+        self.connection.commit()
 
-            
+
     def get_table_print(self):
         self.cursor.execute("select * from packets")
         for row in self.cursor.execute('select * from packets'):
