@@ -129,7 +129,8 @@ signal.signal(signal.SIGINT, signal_handler)
 while True:
     detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
     if detectionType == '1':
-        capture = pyshark.LiveCapture(interface=getInterfaces(), display_filter='tcp || udp')
+        #, display_filter='tcp || udp'
+        capture = pyshark.LiveCapture(interface=getInterfaces())
         capture.sniff_continuously()
         break
     elif detectionType == '2':
