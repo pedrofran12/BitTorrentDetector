@@ -1,19 +1,45 @@
-import sqlite3
 import os
+import time
+import threading
+
+from memsql.common import database
+
+# Specify connection information for a MemSQL node
+HOST = "127.0.0.1"
+PORT = 3306
+USER = "root"
+PASSWORD = ""
+
+# Specify which database and table to work with.
+# Note: this database will be dropped at the end of this script
+DATABASE = "test"
+TABLE = "packets"
+
+# The number of workers to run
+NUM_WORKERS = 20
+
+# Run the workload for this many seconds
+WORKLOAD_TIME = 10
+
+# Batch size to use
+BATCH_SIZE = 5000
+
+def get_connection(db=DATABASE):
+    """ Returns a new connection to the database. """
+    return database.connect(host=HOST, port=PORT, user=USER, password=PASSWORD, database=db)
 
 class BitTorrentDB:
     def __init__(self):
-        '''try:
-            os.remove('btd.db')
-        except:
-            pass
-        self.connection = sqlite3.connect('btd.db')'''
-        self.connection = sqlite3.connect(':memory:')
-        self.connection.isolation_level = None # ver melhor isto!
-        self.cursor = self.connection.cursor()
+        """ Create a database and table for this benchmark to use. """
+        with get_connection(db="information_schema") as conn:
+            print('Creating database %s' % DATABASE)
+            conn.query('CREATE DATABASE IF NOT EXISTS %s' % DATABASE)
+            conn.query('USE %s' % DATABASE)
 
-        # Create table
-        self.cursor.execute("CREATE TABLE packets (ip_src text, ip_dst text,port_src text, port_dst text, packet_size text, data text);")
+            print('Creating table %s' % TABLE)
+            conn.query('CREATE TABLE IF NOT EXISTS packets (ip_src VARCHAR(100), ip_dst VARCHAR(100),port_src VARCHAR(100), port_dst VARCHAR(100), packet_size VARCHAR(100), data VARCHAR(100))')
+
+
 
     def add_info_table(self, packet):
         port_src = '0'
@@ -23,13 +49,17 @@ class BitTorrentDB:
         try:
             ip_src = packet.ip.src.show
             ip_dst = packet.ip.dst.show
+            if(ip_src=='127.0.0.1' or ip_dst=='127.0.0.1'):
+                return
+            if(ip_src==ip_dst):
+                return
         except Exception:
             try:
                 ip_src = packet.ipv6.src.show
                 ip_dst = packet.ipv6.dst.show
             except Exception:
                 return
-        self.cursor.execute('INSERT INTO packets VALUES (?,?,?,?,?,?)', (ip_src, ip_dst, port_src, port_dst, packet_length, date))
+        get_connection().execute('INSERT INTO packets VALUES (%s,%s,%s,%s,%s,%s)', ip_src, ip_dst, port_src, port_dst, packet_length, date)
         #self.connection.commit()
 
 
@@ -39,10 +69,11 @@ class BitTorrentDB:
             print row
 
     def get_ip_generator_of_traffic(self, ip1, ip2):
-        self.connection.commit()
-        query = "SELECT D.IP FROM ( SELECT C.IP, COUNT(C.IP) AS COUNT FROM ( SELECT A.ip_src AS IP, A.data FROM packets A WHERE A.ip_src=? UNION SELECT B.ip_dst AS IP, B.data FROM packets B WHERE B.ip_dst=? ) AS C GROUP BY C.IP ) AS D WHERE D.COUNT=( SELECT MAX(H.COUNT) FROM ( SELECT COUNT(G.IP) AS COUNT FROM ( SELECT E.ip_src AS IP, E.data FROM packets E WHERE E.ip_src=? UNION SELECT F.ip_dst AS IP, F.data FROM packets F WHERE F.ip_dst=? ) AS G GROUP BY G.IP ) AS H)"
-        response = self.cursor.execute(query, (ip1, ip2, ip1, ip2)).fetchall()
+        print 'entered'
+        query = "SELECT D.IP FROM ( SELECT C.IP, COUNT(C.IP) AS COUNT FROM ( SELECT A.ip_src AS IP, A.data FROM packets A WHERE A.ip_src=%s UNION SELECT B.ip_dst AS IP, B.data FROM packets B WHERE B.ip_dst=%s ) AS C GROUP BY C.IP ) AS D WHERE D.COUNT=( SELECT MAX(H.COUNT) FROM ( SELECT COUNT(G.IP) AS COUNT FROM ( SELECT E.ip_src AS IP, E.data FROM packets E WHERE E.ip_src=%s UNION SELECT F.ip_dst AS IP, F.data FROM packets F WHERE F.ip_dst=%s ) AS G GROUP BY G.IP ) AS H)"
+        response = get_connection().query(query, ip1, ip2, ip1, ip2)
+        print response
         if(len(response) == 1):
             #Just one answer from DB
-            return response[0][0]
+            return response[0].IP
         raise Exception('2 ips equally frequent')

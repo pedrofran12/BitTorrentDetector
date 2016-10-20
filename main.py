@@ -8,7 +8,7 @@ import sys
 from BitTorrentDB import BitTorrentDB
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
-import thread
+import threading
 import readline, glob
 def complete(text, state):
     return (glob.glob(text+'*')+[None])[state]
@@ -23,6 +23,9 @@ def getInterfaces():
     for i in range(len(interfaces))[::-1]:
         if(netifaces.AF_INET not in netifaces.ifaddresses(interfaces[i])):
             del interfaces[i]
+        if(interfaces[i]=='localhost'):
+            del interfaces[i]
+
     return interfaces
 
 
@@ -141,11 +144,26 @@ db = BitTorrentDB()
 os.system('clear')
 t = PrettyTable(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date'])
 print(t)
+x=[]
 for packet in capture:
-    db.add_info_table(packet)
+    #db.add_info_table(packet)
+    if(len(x)<5):
+        threadid = threading.Thread(target=db.add_info_table, args=(packet,))
+        x.append(threadid)
+        threadid.start()
+    else:
+        for threadid in x:
+            threadid.join()
+        x=[]
+    #thread.start_new_thread ( db.add_info_table, (packet,) )
+
     if(packet.frame_info.protocols.find('bittorrent') > 0):
-        handleTable(packet)
+        #handleTable(packet)
         #thread.start_new_thread ( handleTable, (packet,) )
+        threadid = threading.Thread(target=handleTable, args=(packet,))
+        threadid.start()
+        threadid.join()
+
 
 signal.pause()
 saveLog = open('log.txt', 'w')
