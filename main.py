@@ -120,9 +120,11 @@ def handleTable(packet):
 
 def signal_handler(signal, frame):
     global t
+    global start_time
     target = open('log.txt', 'w')
     target.write(t.get_string())
     target.close()
+    print("Execution time: %s seconds" % (time.time() - start_time))
     sys.exit(0)
 
 
@@ -145,6 +147,7 @@ os.system('clear')
 t = PrettyTable(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date'])
 print(t)
 x=[]
+start_time = time.time()
 for packet in capture:
     #db.add_info_table(packet)
     if(len(x)<5):
@@ -164,7 +167,7 @@ for packet in capture:
         threadid.start()
         threadid.join()
 
-
+print("Execution time: %s seconds" % (time.time() - start_time))
 signal.pause()
 saveLog = open('log.txt', 'w')
 saveLog.write(t.get_string())
