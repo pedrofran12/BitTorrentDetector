@@ -1,0 +1,53 @@
+{
+  "name": "bit-torrent-detector",
+  "version": "1.0.0",
+  "description": "Detects bit torrent trafic",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node jsonCreator.js & npm run start",
+    "lint": "eslint src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pedrofran12/BitTorrentDetector.git"
+  },
+  "keywords": [
+    "react",
+    "reactjs",
+    "boilerplate",
+    "hot",
+    "reload",
+    "hmr",
+    "live",
+    "edit",
+    "webpack"
+  ],
+  "author": "Joao Tiago @jonhnytiago",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-core": "^6.17.0",
+    "babel-eslint": "^4.1.3",
+    "babel-loader": "^6.0.1",
+    "babel-preset-es2015": "^6.0.15",
+    "babel-preset-react": "^6.0.15",
+    "babel-preset-stage-0": "^6.0.15",
+    "eslint": "^1.10.3",
+    "eslint-plugin-react": "^3.6.2",
+    "webpack": "^1.12.2"
+  },
+  "dependencies": {
+    "chance": "^1.0.4",
+    "csv-parser": "^1.11.0",
+    "csv-write-stream": "^2.0.0",
+    "express": "^4.14.0",
+    "react": "^0.14.6",
+    "react-bootstrap": "^0.30.5",
+    "react-dom": "^0.14.6",
+    "socket.io": "^1.5.0",
+    "socket.io-client": "^1.5.1",
+    "tail-stream": "^0.2.1",
+    "webpack-dev-middleware": "^1.8.4",
+    "webpack-hot-middleware": "^2.13.0",
+    "writable2": "^0.1.2"
+  }
+}
