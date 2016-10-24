@@ -4,7 +4,7 @@
   "description": "Detects bit torrent trafic",
   "scripts": {
     "start": "node server.js",
-    "test": "node jsonCreator.js & npm run start",
+    "test": "node mockup.js & npm run start",
     "lint": "eslint src"
   },
   "repository": {
