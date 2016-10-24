@@ -12,7 +12,7 @@ PASSWORD = ""
 
 # Specify which database and table to work with.
 # Note: this database will be dropped at the end of this script
-DATABASE = "test"
+DATABASE = "csf"
 TABLE = "packets"
 
 # The number of workers to run
@@ -37,15 +37,19 @@ class BitTorrentDB:
             conn.query('USE %s' % DATABASE)
 
             print('Creating table %s' % TABLE)
-            conn.query('CREATE TABLE IF NOT EXISTS packets (ip_src VARCHAR(100), ip_dst VARCHAR(100),port_src VARCHAR(100), port_dst VARCHAR(100), packet_size VARCHAR(100), data VARCHAR(100))')
+            conn.query('DROP TABLE IF EXISTS packets')
+            conn.query('CREATE TABLE IF NOT EXISTS packets (ip_src VARCHAR(100), ip_dst VARCHAR(100),port_src MEDIUMINT, port_dst MEDIUMINT, packet_size INT, date VARCHAR(100))')
 
 
 
     def add_info_table(self, packet):
-        port_src = '0'
-        port_dst = '0'
-        packet_length = '0'
-        date = str(packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S"))
+        try:
+            protocol = packet.transport_layer
+            port_src = packet[protocol].srcport
+            port_dst = packet[protocol].dstport
+        except AttributeError as e:
+            #ignore packets that aren't TCP/UDP
+            return
         try:
             ip_src = packet.ip.src.show
             ip_dst = packet.ip.dst.show
@@ -59,6 +63,8 @@ class BitTorrentDB:
                 ip_dst = packet.ipv6.dst.show
             except Exception:
                 return
+        packet_length = packet.length #check if this is the best length for the packet
+        date = str(packet.sniff_time.strftime("%Y-%m-%d %H:%M:%S"))
         get_connection().execute('INSERT INTO packets VALUES (%s,%s,%s,%s,%s,%s)', ip_src, ip_dst, port_src, port_dst, packet_length, date)
         #self.connection.commit()
 
@@ -70,7 +76,7 @@ class BitTorrentDB:
 
     def get_ip_generator_of_traffic(self, ip1, ip2):
         print 'entered'
-        query = "SELECT D.IP FROM ( SELECT C.IP, COUNT(C.IP) AS COUNT FROM ( SELECT A.ip_src AS IP, A.data FROM packets A WHERE A.ip_src=%s UNION SELECT B.ip_dst AS IP, B.data FROM packets B WHERE B.ip_dst=%s ) AS C GROUP BY C.IP ) AS D WHERE D.COUNT=( SELECT MAX(H.COUNT) FROM ( SELECT COUNT(G.IP) AS COUNT FROM ( SELECT E.ip_src AS IP, E.data FROM packets E WHERE E.ip_src=%s UNION SELECT F.ip_dst AS IP, F.data FROM packets F WHERE F.ip_dst=%s ) AS G GROUP BY G.IP ) AS H)"
+        query = "SELECT D.IP FROM ( SELECT C.IP, COUNT(C.IP) AS COUNT FROM ( SELECT A.ip_src AS IP, A.date FROM packets A WHERE A.ip_src=%s UNION SELECT B.ip_dst AS IP, B.date FROM packets B WHERE B.ip_dst=%s ) AS C GROUP BY C.IP ) AS D WHERE D.COUNT=( SELECT MAX(H.COUNT) FROM ( SELECT COUNT(G.IP) AS COUNT FROM ( SELECT E.ip_src AS IP, E.date FROM packets E WHERE E.ip_src=%s UNION SELECT F.ip_dst AS IP, F.date FROM packets F WHERE F.ip_dst=%s ) AS G GROUP BY G.IP ) AS H)"
         response = get_connection().query(query, ip1, ip2, ip1, ip2)
         print response
         if(len(response) == 1):

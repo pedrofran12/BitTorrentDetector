@@ -5,6 +5,7 @@ import os.path
 import urllib2
 import signal
 import sys
+import time
 from BitTorrentDB import BitTorrentDB
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
