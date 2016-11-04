@@ -1,4 +1,5 @@
-import pyshark_ext.network.get
+import get
+import parser
 
 IPV4 = 'ipv4'
 IPV6 = 'ipv6'
@@ -44,4 +45,3 @@ def same_subnet(ip1, ip2, mask):
         return same_subnet_ipv4(ip1, ip2, mask)
     else:
         return False
- 

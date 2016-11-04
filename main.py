@@ -51,7 +51,7 @@ print getInterfaces()
 bitList = pyshark.BitTorrentList()
 for packet in capture:
     bitList.add(packet)
-    if len(bitList) >= 10:
+    if len(bitList.get_pairs()) >= 10:
         break
 
 bitList._test_print_host_info()

@@ -2,6 +2,9 @@ import pyshark_ext as pyshark
 import pyshark_ext.network.get as get
 import signal
 
+print pyshark.network.parser.parse_ipv4_mask('192.168.1.1/24')
+
+'''
 def signal_handler(signal, frame):
     sys.exit(0)
 
@@ -32,3 +35,4 @@ bitList._test_print_host_info()
 
 print "\n\n\nRECIEVED HASHES INFO"
 bitList._test_print_recieved_hashes()
+'''
