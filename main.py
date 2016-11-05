@@ -1,14 +1,13 @@
 import pyshark
 import socket
 import netifaces
-import os.path
 import urllib2
 import signal
 import sys
 import time
+from Cli import Cli
 from BitTorrentDB import BitTorrentDB
 from bs4 import BeautifulSoup
-from prettytable import PrettyTable
 import threading
 import readline, glob
 def complete(text, state):
@@ -114,18 +113,14 @@ def handleTable(packet):
     packetDetection = (packetInfo[0], packetInfo[3])
     if(packetDetection not in detections):
         detections.append(packetDetection)
-        t.add_row(packetInfo)
-        os.system('clear')
-        print(t)
+        ui.writeLine(packetInfo)
     return
 
 def signal_handler(signal, frame):
     global t
     global start_time
     RUN = False
-    target = open('log.txt', 'w')
-    target.write(t.get_string())
-    target.close()
+    ui.finish()
     print("Execution time: %s seconds" % (time.time() - start_time))
     sys.exit(0)
 
@@ -138,9 +133,7 @@ def check_encrypted_traffic():
             if((row.ip, '?') not in detections):
                 detections.append((row.ip, '?'))
                 packetInfo = [row.ip, row.mac, getHostNameByIp(row.ip), '?', '?', row.date]
-                t.add_row(packetInfo)
-                os.system('clear')
-                print(t)
+                ui.writeLine(packetInfo)
     except Exception:
         pass
     # call check_encrypted_traffic() again in 60 seconds
@@ -148,38 +141,47 @@ def check_encrypted_traffic():
         threading.Timer(60, check_encrypted_traffic).start()
     return
 
+def chooseUI():
+    while True:
+        inputValue = raw_input('Escolha UI:\n1 - Linha de comandos\n2 - Interface grafica\n')
+        if inputValue == '1':
+            return Cli()
+        elif inputValue == '2':
+            return Cli()
 
 
-detections = []
-signal.signal(signal.SIGINT, signal_handler)
-while True:
-    detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
-    if detectionType == '1':
-        capture = pyshark.LiveCapture(interface=getInterfaces(), display_filter='ip.src!=ip.dst and (tcp or udp)')
-        capture.sniff_continuously()
-        break
-    elif detectionType == '2':
-        capture = pyshark.FileCapture(getFileCapture(), display_filter='ip.src!=ip.dst and (tcp or udp)')
-        break
+def typeOfCaptureDetection():
+    while True:
+        detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
+        if detectionType == '1':
+            #, display_filter='ip.src!=ip.dst and (tcp or udp)'
+            capture = pyshark.LiveCapture(interface=getInterfaces())
+            capture.sniff_continuously()
+            return capture
+        elif detectionType == '2':
+            capture = pyshark.FileCapture(getFileCapture())
+            return capture
 
+
+capture = typeOfCaptureDetection()
 db = BitTorrentDB()
-os.system('clear')
-t = PrettyTable(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date'])
-print(t)
-x=[]
+ui = chooseUI()
+signal.signal(signal.SIGINT, signal_handler)
+threadArray = []
+detections = []
 start_time = time.time()
 # start calling check_encrypted_traffic now and every 60 sec thereafter
 RUN=True
 check_encrypted_traffic()
 for packet in capture:
-    if(len(x)<5):
+    if(len(threadArray)<5):
         threadid = threading.Thread(target=db.add_info_table, args=(packet,))
-        x.append(threadid)
+        threadArray.append(threadid)
         threadid.start()
     else:
-        for threadid in x:
+        for threadid in threadArray:
             threadid.join()
-        x=[]
+        threadArray=[]
 
     if(packet.frame_info.protocols.find('bittorrent') > 0):
         threadid = threading.Thread(target=handleTable, args=(packet,))
