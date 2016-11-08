@@ -5,6 +5,7 @@ import urllib2
 import signal
 import sys
 import time
+import os
 from Cli import Cli
 from BitTorrentDB import BitTorrentDB
 from bs4 import BeautifulSoup
@@ -41,7 +42,7 @@ def getPacketInfo(packet):
     info_hash = getPacketInfoHash(packet)
     if(info_hash!='?'):
         [ip, mac] = getIpInfo(packet)
-        date = packet.sniff_time.strftime("%d-%m-%Y %H:%M:%S")
+        date = packet.sniff_time.strftime("%Y-%m-%d %H:%M:%S")
         torrentInfo = getFileDescription(info_hash)
         return [ip, mac, getHostNameByIp(ip), info_hash, torrentInfo, date]
     else:
@@ -91,6 +92,7 @@ def getPacketInfoHash(packet):
 
 
 def getFileDescription(info_hash):
+    '''
     if info_hash == '?':
         return '?'
     try:
@@ -103,6 +105,8 @@ def getFileDescription(info_hash):
         return title
     except:
         return '?'
+    '''
+    return '?'
 
 def handleTable(packet):
     global detections
@@ -117,8 +121,8 @@ def handleTable(packet):
     return
 
 def signal_handler(signal, frame):
-    global t
     global start_time
+    global RUN
     RUN = False
     ui.finish()
     print("Execution time: %s seconds" % (time.time() - start_time))
@@ -127,18 +131,21 @@ def signal_handler(signal, frame):
 
 def check_encrypted_traffic():
     global db
-    try:
-        response = db.check_traffic()
-        for row in response:
-            if((row.ip, '?') not in detections):
-                detections.append((row.ip, '?'))
-                packetInfo = [row.ip, row.mac, getHostNameByIp(row.ip), '?', '?', row.date]
-                ui.writeLine(packetInfo)
-    except Exception:
-        pass
+    global check
+    if check != None:
+        try:
+            response = db.check_traffic()
+            for row in response:
+                if((row.ip, '?') not in detections):
+                    detections.append((row.ip, '?'))
+                    packetInfo = [row.ip, row.mac, getHostNameByIp(row.ip), '?', '?', row.date]
+                    ui.writeLine(packetInfo)
+        except Exception:
+            pass
     # call check_encrypted_traffic() again in 60 seconds
     if(RUN):
-        threading.Timer(60, check_encrypted_traffic).start()
+        check = threading.Timer(20, check_encrypted_traffic)
+        check.start()
     return
 
 def chooseUI():
@@ -159,7 +166,7 @@ def typeOfCaptureDetection():
             capture.sniff_continuously()
             return capture
         elif detectionType == '2':
-            capture = pyshark.FileCapture(getFileCapture())
+            capture = pyshark.FileCapture(getFileCapture(), keep_packets=False)
             return capture
 
 
@@ -172,8 +179,13 @@ detections = []
 start_time = time.time()
 # start calling check_encrypted_traffic now and every 60 sec thereafter
 RUN=True
+check=None
 check_encrypted_traffic()
+count=0
 for packet in capture:
+    count+=1
+    sys.stdout.write("\r%d" % count)
+    sys.stdout.flush()
     if(len(threadArray)<5):
         threadid = threading.Thread(target=db.add_info_table, args=(packet,))
         threadArray.append(threadid)
@@ -188,9 +200,11 @@ for packet in capture:
         threadid.start()
         threadid.join()
 
+sys.stdout.write("\n")
+sys.stdout.flush()
 print("Execution time: %s seconds" % (time.time() - start_time))
-signal.pause()
+#signal.pause()
 RUN = False
-saveLog = open('log.txt', 'w')
-saveLog.write(t.get_string())
-saveLog.close()
+if check != None:
+    check.join()
+ui.finish()
