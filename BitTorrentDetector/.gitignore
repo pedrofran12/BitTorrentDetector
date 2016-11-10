@@ -1,0 +1,4 @@
+log.txt
+btd.db
+btd.db-journal
+*.pyc
