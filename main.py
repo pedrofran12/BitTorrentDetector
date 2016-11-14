@@ -44,7 +44,7 @@ def getPacketInfo(packet):
         [ip, mac] = getIpInfo(packet)
         date = packet.sniff_time.strftime("%Y-%m-%d %H:%M:%S")
         torrentInfo = getFileDescription(info_hash)
-        return [ip, mac, getHostNameByIp(ip), info_hash, torrentInfo, date]
+        return [ip, mac, getHostNameByIp(ip), info_hash, torrentInfo, date, 'Packet Inspection']
     else:
         raise Exception('Bittorrent packet without hash!')
 
@@ -138,7 +138,7 @@ def check_encrypted_traffic():
             for row in response:
                 if((row.ip, '?') not in detections):
                     detections.append((row.ip, '?'))
-                    packetInfo = [row.ip, row.mac, getHostNameByIp(row.ip), '?', '?', row.date]
+                    packetInfo = [row.ip, row.mac, getHostNameByIp(row.ip), '?', '?', row.date, 'Flow Inspection']
                     ui.writeLine(packetInfo)
         except Exception:
             pass

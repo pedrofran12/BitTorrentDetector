@@ -4,7 +4,7 @@ from prettytable import PrettyTable
 class Cli:
     def __init__(self):
         os.system('clear')
-        self.table = PrettyTable(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date'])
+        self.table = PrettyTable(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date', 'Type of Detection'])
         print(self.table)
         return
 
