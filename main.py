@@ -79,6 +79,8 @@ def getMacInfo(paket, origin):
 
 
 def getHostNameByIp(ip):
+    if not LIVE_CAPTURE_FLAG:
+        return '?'
     try:
         return socket.gethostbyaddr(ip)[0]
     except:
@@ -158,18 +160,22 @@ def chooseUI():
 
 
 def typeOfCaptureDetection():
+    global LIVE_CAPTURE_FLAG
     while True:
         detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
         if detectionType == '1':
             #, display_filter='ip.src!=ip.dst and (tcp or udp)'
             capture = pyshark.LiveCapture(interface=getInterfaces())
             capture.sniff_continuously()
+            LIVE_CAPTURE_FLAG = True
             return capture
         elif detectionType == '2':
             capture = pyshark.FileCapture(getFileCapture(), keep_packets=False)
+            LIVE_CAPTURE_FLAG = False
             return capture
 
-
+LIVE_CAPTURE_FLAG = False
+NUMBER_OF_THREADS = 5
 capture = typeOfCaptureDetection()
 db = BitTorrentDB()
 ui = chooseUI()
@@ -186,7 +192,7 @@ for packet in capture:
     count+=1
     sys.stdout.write("\r%d" % count)
     sys.stdout.flush()
-    if(len(threadArray)<5):
+    if(len(threadArray) < NUMBER_OF_THREADS):
         threadid = threading.Thread(target=db.add_info_table, args=(packet,))
         threadArray.append(threadid)
         threadid.start()
