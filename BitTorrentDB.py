@@ -103,7 +103,7 @@ class BitTorrentDB:
         number_of_ports = MINIMUM_NUMBER_OF_PORTS_TO_CONSIDER_BITTORRENT_TRAFFIC
         minutes_to_check = MINUTES_TO_CHECK_ENCRYPTED_TRAFFIC
         date = self.get_max_date()
-        query = "SELECT C.ip, C.mac, STR_TO_DATE(%s, %s) AS date, COUNT(DISTINCT C.port) AS Number_Ports, SUM(C.packet_size)/(COUNT(DISTINCT C.port)) AS Generated_Traffic_Per_Port \
+        query = "SELECT C.ip, C.mac, STR_TO_DATE(%s, %s) AS date, COUNT(*) AS Number_Packets, SUM(C.packet_size) AS Generated_Traffic_Per_Port \
                  FROM ( \
                        SELECT A.ip_src AS ip, A.mac_src AS mac, A.port_src AS port, A.packet_size \
                        FROM packets AS A \
@@ -114,7 +114,7 @@ class BitTorrentDB:
                        WHERE B.date > (SELECT DATE_SUB(STR_TO_DATE(%s, %s), INTERVAL %s MINUTE)) \
                        ) AS C \
                  GROUP BY C.ip, C.mac \
-                 HAVING COUNT(DISTINCT C.port) > %s"
+                 HAVING COUNT(DISTINCT C.port) > %s OR (COUNT(DISTINCT C.port) < 10 AND COUNT(*) > 190 AND SUM(C.packet_size)/COUNT(*) > 730)"
 
         response = get_connection().query(query, date, "%Y-%m-%d %H:%i:%s", date, "%Y-%m-%d %H:%i:%s.%f", minutes_to_check, date,"%Y-%m-%d %H:%i:%s.%f", minutes_to_check, number_of_ports)
         print 'check_traffic:', response
