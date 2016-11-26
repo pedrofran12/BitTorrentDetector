@@ -15,13 +15,13 @@ WriteLine.on('begin', () => {
     defaultEncoding: 'utf8',
   });
 
-  writer = new csvWriter({ headers: ["ip", "mac", "host", "hash", "date"] })
+  writer = new csvWriter({ headers: ["ip", "mac", "host", "hash", "date", "detectiontype"] })
   writer.pipe(ws)
 })
 
 WriteLine.on('data', data => {
-  var { ip, mac, host, hash, date} = data;
-  writer.write({ ip, mac, host, hash, date})
+  var { ip, mac, host, hash, date, detectiontype} = data;
+  writer.write({ ip, mac, host, hash, date, detectiontype})
 })
 
 WriteLine.on('end', () => {
@@ -32,11 +32,12 @@ WriteLine.emit('begin')
 
 var interval = setInterval(() => {
   WriteLine.emit('data', {
-    ip: chance.ip(), 
+    ip: chance.ip(),
     mac: chance.mac_address(),
     host: chance.name().replace(/\s+/g, '')+'-PC',
     hash: chance.hash(),
-    date: chance.date({string: true, american: false})
+    date: chance.date({string: true, american: false}),
+    detectiontype: 'packet inspection'
   })
 }, 1000)
 

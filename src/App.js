@@ -33,6 +33,7 @@ export default class App extends Component {
               <th>Src MAC</th>
               <th>Host Name</th>
               <th>Torrent Hash</th>
+              <th>Type of Detection</th>
             </tr>
           </thead>
           <PacketList

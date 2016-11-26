@@ -1,8 +1,8 @@
 import csv
 from pylocker import Locker
 
-# Run this before starting to write to a file, run it once to specify the 
-# headers and then start using writeLine(), otherwise the parser will not know 
+# Run this before starting to write to a file, run it once to specify the
+# headers and then start using writeLine(), otherwise the parser will not know
 # the name of the headers and therefore fail the parsing
 def init():
     FL = Locker(filePath='cap.csv', lockPass="passwd", mode='w', timeout=20, wait=0.05)
@@ -10,7 +10,7 @@ def init():
         acquired, code, fd  = r
         if fd is not None:
             spamwriter = csv.writer(fd);
-            spamwriter.writerow(['ip', 'mac', 'host', 'hash', 'date'])
+            spamwriter.writerow(['ip', 'mac', 'host', 'hash', 'date', 'detectiontype'])
     # no need to release anything because with statement takes care of that
     return
 

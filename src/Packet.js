@@ -10,6 +10,7 @@ export default class Packet extends Component {
         <td>{this.props.mac}</td>
         <td>{this.props.host}</td>
         <td>{this.props.hash}</td>
+        <td>{this.props.detectiontype}</td>
       </tr>
     );
   }

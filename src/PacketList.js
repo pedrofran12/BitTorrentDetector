@@ -17,6 +17,7 @@ export default class PacketList extends Component {
             mac={pkt.mac}
             host={pkt.host}
             hash={pkt.hash}
+            detectiontype={pkt.detectiontype}
           />
         );
       })
