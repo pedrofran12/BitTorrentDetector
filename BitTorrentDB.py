@@ -41,8 +41,8 @@ class BitTorrentDB:
             port_src = packet[protocol].srcport
             port_dst = packet[protocol].dstport
         except AttributeError as e:
-            #ignore packets that aren't TCP/UDP
-            return
+            port_src = 0
+            port_dst = 0
         try:
             ip_src = packet.ip.src.show
             ip_dst = packet.ip.dst.show
@@ -60,7 +60,7 @@ class BitTorrentDB:
         except Exception:
             mac_src = '?'
             mac_dst = '?'
-        packet_length = packet.length #check if this is the best length for the packet
+        packet_length = packet.captured_length #check if this is the best length for the packet
         date = str(packet.sniff_time.strftime("%Y-%m-%d %H:%M:%S.%f"))
         get_connection().execute('INSERT INTO packets VALUES (%s,%s,%s,%s,%s,%s,%s,str_to_date(%s, %s))', ip_src, ip_dst, mac_src, mac_dst, port_src, port_dst, packet_length, date, "%Y-%m-%d %H:%i:%s.%f")
 
@@ -114,7 +114,7 @@ class BitTorrentDB:
                        WHERE B.date > (SELECT DATE_SUB(STR_TO_DATE(%s, %s), INTERVAL %s MINUTE)) \
                        ) AS C \
                  GROUP BY C.ip, C.mac \
-                 HAVING COUNT(DISTINCT C.port) > %s OR (COUNT(DISTINCT C.port) < 10 AND COUNT(*) > 190 AND SUM(C.packet_size)/COUNT(*) > 730)"
+                 HAVING COUNT(DISTINCT C.port) > %s OR (((COUNT(DISTINCT C.port) < 10 AND COUNT(DISTINCT C.port) >= 2) OR SUM(C.port) = 0) AND COUNT(*) > 190 AND SUM(C.packet_size)/COUNT(*) >= 512)"
 
         response = get_connection().query(query, date, "%Y-%m-%d %H:%i:%s", date, "%Y-%m-%d %H:%i:%s.%f", minutes_to_check, date,"%Y-%m-%d %H:%i:%s.%f", minutes_to_check, number_of_ports)
         print 'check_traffic:', response
