@@ -94,21 +94,15 @@ def getPacketInfoHash(packet):
 
 
 def getFileDescription(info_hash):
-    '''
     if info_hash == '?':
         return '?'
-    try:
-        url = "https://isohunt.bypassed.pw/torrents/?ihq=" + info_hash
-        hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11'}
-        html = urllib2.urlopen(urllib2.Request(url, headers=hdr)).read()
-        title = BeautifulSoup(html, "html.parser").title.string.replace(" torrent on isoHunt", "")
-        if(title.lower().find(info_hash.lower())>=0):
-            return '?'
+    from googleSearch import GoogleSearch
+    result = GoogleSearch(info_hash)
+    title = result.getTitle()
+    if title:
         return title
-    except:
+    else:
         return '?'
-    '''
-    return '?'
 
 def handleTable(packet):
     global detections
@@ -144,7 +138,7 @@ def check_encrypted_traffic():
                     ui.writeLine(packetInfo)
         except Exception:
             pass
-    # call check_encrypted_traffic() again in 60 seconds
+    # call check_encrypted_traffic() again in 20 seconds
     if(RUN):
         check = threading.Timer(20, check_encrypted_traffic)
         check.start()
@@ -164,7 +158,6 @@ def typeOfCaptureDetection():
     while True:
         detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
         if detectionType == '1':
-            #, display_filter='ip.src!=ip.dst and (tcp or udp)'
             capture = pyshark.LiveCapture(interface=getInterfaces())
             capture.sniff_continuously()
             LIVE_CAPTURE_FLAG = True
@@ -183,7 +176,7 @@ signal.signal(signal.SIGINT, signal_handler)
 threadArray = []
 detections = []
 start_time = time.time()
-# start calling check_encrypted_traffic now and every 60 sec thereafter
+# start calling check_encrypted_traffic now and every 20 sec thereafter
 RUN=True
 check=None
 check_encrypted_traffic()
@@ -209,7 +202,6 @@ for packet in capture:
 sys.stdout.write("\n")
 sys.stdout.flush()
 print("Execution time: %s seconds" % (time.time() - start_time))
-#signal.pause()
 RUN = False
 if check != None:
     check.join()
