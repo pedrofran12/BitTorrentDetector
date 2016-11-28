@@ -1,14 +1,12 @@
 import pyshark
 import socket
 import netifaces
-import urllib2
 import signal
 import sys
 import time
 import os
 from Cli import Cli
 from BitTorrentDB import BitTorrentDB
-from bs4 import BeautifulSoup
 import threading
 import readline, glob
 def complete(text, state):
