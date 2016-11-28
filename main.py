@@ -161,7 +161,7 @@ def typeOfCaptureDetection():
     while True:
         detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
         if detectionType == '1':
-            capture = pyshark.LiveCapture(interface=getInterfaces())
+            capture = pyshark.LiveCapture(interface=getInterfaces(), display_filter='ip.src!=ip.dst')
             capture.sniff_continuously()
             LIVE_CAPTURE_FLAG = True
             return capture
@@ -210,3 +210,6 @@ sys.stdout.write("\n")
 sys.stdout.flush()
 print("Execution time: %s seconds" % (time.time() - start_time))
 RUN = False
+if check != None:
+    check.join()
+ui.finish()
