@@ -9,6 +9,7 @@ from Cli import Cli
 from BitTorrentDB import BitTorrentDB
 import threading
 import readline, glob
+import multiprocessing
 def complete(text, state):
     return (glob.glob(text+'*')+[None])[state]
 #File path autocomplete
@@ -127,6 +128,10 @@ def check_encrypted_traffic():
     global db
     global check
     if check != None:
+        for i in range(20):
+            if not RUN:
+                break
+            time.sleep(1)
         try:
             response = db.check_traffic()
             for row in response:
@@ -138,7 +143,7 @@ def check_encrypted_traffic():
             pass
     # call check_encrypted_traffic() again in 20 seconds
     if(RUN):
-        check = threading.Timer(20, check_encrypted_traffic)
+        check = threading.Thread(target=check_encrypted_traffic)
         check.start()
     return
 
@@ -166,12 +171,12 @@ def typeOfCaptureDetection():
             return capture
 
 LIVE_CAPTURE_FLAG = False
-NUMBER_OF_THREADS = 5
+NUMBER_OF_THREADS = multiprocessing.cpu_count() * 2
 capture = typeOfCaptureDetection()
 db = BitTorrentDB()
 ui = chooseUI()
 signal.signal(signal.SIGINT, signal_handler)
-threadArray = []
+threadArray = [None] * NUMBER_OF_THREADS
 detections = []
 start_time = time.time()
 # start calling check_encrypted_traffic now and every 20 sec thereafter
@@ -179,18 +184,22 @@ RUN=True
 check=None
 check_encrypted_traffic()
 count=0
+iterator = 0
 for packet in capture:
     count+=1
     sys.stdout.write("\r%d" % count)
     sys.stdout.flush()
-    if(len(threadArray) < NUMBER_OF_THREADS):
-        threadid = threading.Thread(target=db.add_info_table, args=(packet,))
-        threadArray.append(threadid)
-        threadid.start()
-    else:
-        for threadid in threadArray:
-            threadid.join()
-        threadArray=[]
+
+    iterator = iterator % NUMBER_OF_THREADS
+    try:
+        threadid = threadArray[iterator]
+        threadid.join()
+    except:
+        pass
+    threadid = threading.Thread(target=db.add_info_table, args=(packet,))
+    threadArray[iterator] = threadid
+    threadid.start()
+    iterator+=1
 
     if(packet.frame_info.protocols.find('bittorrent') > 0):
         threadid = threading.Thread(target=handleTable, args=(packet,))
@@ -201,6 +210,3 @@ sys.stdout.write("\n")
 sys.stdout.flush()
 print("Execution time: %s seconds" % (time.time() - start_time))
 RUN = False
-if check != None:
-    check.join()
-ui.finish()
