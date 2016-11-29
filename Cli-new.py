@@ -1,4 +1,5 @@
 import os.path
+#from prettytable import PrettyTable
 from texttable import Texttable
 
 class Cli:
@@ -7,7 +8,7 @@ class Cli:
         self.table = Texttable()
         self.table.add_row(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description', 'Date', 'Type of Detection'])
         self.table.set_cols_align(["c", "c", "c", "c", "c", "c", "c"])
-        self.table.set_cols_width([15, 17, 8, 30, 30, 19, 17])
+        self.table.set_cols_width([15, 17, 15, 30, 30, 19, 17])
         print(self.table.draw())
         return
 
