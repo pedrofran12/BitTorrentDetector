@@ -3,6 +3,5 @@ Detector de tráfego BitTorrent. Projecto feito para a cadeira de CSF (Ciber Seg
 ##Requisitos:
 ```shell
 sudo apt-get install python python-pip tshark
-pip install pyshark
+pip install -r requirements.txt
 ```
-
