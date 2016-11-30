@@ -157,7 +157,7 @@ def chooseInterface():
         print '  Exemplo: 1 3'
 
     if len(interfaces) == 2: #user has just 1 interface and any
-        return interfaces
+        return interfaces[0]
     while True:
         printInterfaces()
         inputValue = raw_input('Numero de interface(s): ')
