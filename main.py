@@ -23,9 +23,7 @@ def getInterfaces():
     for i in range(len(interfaces))[::-1]:
         if(netifaces.AF_INET not in netifaces.ifaddresses(interfaces[i])):
             del interfaces[i]
-        if(interfaces[i]=='localhost'):
-            del interfaces[i]
-
+    interfaces.append('any')
     return interfaces
 
 
@@ -147,6 +145,32 @@ def check_encrypted_traffic():
         check.start()
     return
 
+
+def chooseInterface():
+    interfaces = getInterfaces()
+    def printInterfaces():
+        print 'Indique a(s) interface(s) de captura:'
+        for i in range(len(interfaces)):
+            print i+1, '- ' + interfaces[i]
+        print '  No caso de multiplas interfaces indique os numeros das interfaces separadas por espaco'
+        print '  Exemplo: 1 3'
+
+    if len(interfaces) == 2: #user has just 1 interface and any
+        return interfaces
+    while True:
+        printInterfaces()
+        inputValue = raw_input('Numero de interface(s): ')
+        inputValue = inputValue.split(' ')
+        try:
+            for i in range(len(inputValue)):
+                if int(inputValue[i])-1 not in range(len(interfaces)):
+                    raise Exception('numero de interface invalida')
+                inputValue[i] = interfaces[int(inputValue[i])-1]
+            return inputValue
+        except:
+            print 'INTERFACE INVALIDA'
+
+
 def chooseUI():
     while True:
         inputValue = raw_input('Escolha UI:\n1 - Linha de comandos\n2 - Interface grafica\n')
@@ -161,7 +185,7 @@ def typeOfCaptureDetection():
     while True:
         detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
         if detectionType == '1':
-            capture = pyshark.LiveCapture(interface=getInterfaces(), display_filter='ip.src!=ip.dst')
+            capture = pyshark.LiveCapture(interface=chooseInterface(), display_filter='ip.src!=ip.dst')
             capture.sniff_continuously()
             LIVE_CAPTURE_FLAG = True
             return capture
