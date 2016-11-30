@@ -33,4 +33,14 @@ class Gui:
         return
 
     def finish(self):
-        pass
+        table = Texttable()
+        table.set_cols_align(["c", "c", "c", "c", "c", "c", "c"])
+        table.set_cols_width([15, 17, 8, 30, 30, 19, 17])
+        fd = open(fileName, 'r')
+        lines = fd.readlines()
+        fd.close()
+        for i in range(len(lines)):
+            table.add_row(lines[i].split(','))
+        target = open('log.txt', 'w')
+        target.write(table.draw())
+        target.close()
