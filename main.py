@@ -6,6 +6,7 @@ import sys
 import time
 import os
 from Cli import Cli
+from Gui import Gui
 from BitTorrentDB import BitTorrentDB
 import threading
 import readline, glob
@@ -153,7 +154,7 @@ def chooseUI():
         if inputValue == '1':
             return Cli()
         elif inputValue == '2':
-            return Cli()
+            return Gui()
 
 
 def typeOfCaptureDetection():
