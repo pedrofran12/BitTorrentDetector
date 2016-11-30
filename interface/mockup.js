@@ -15,7 +15,7 @@ WriteLine.on('begin', () => {
     defaultEncoding: 'utf8',
   });
 
-  writer = new csvWriter({ headers: ["ip", "mac", "host", "hash", "date", "detectiontype"] })
+  writer = new csvWriter({ headers: ["ip", "mac", "host", "hash", "description", "date", "detectiontype"] })
   writer.pipe(ws)
 })
 

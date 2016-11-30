@@ -1,44 +1,40 @@
-Bit Torrent Trafic Detector
-=====================
-
-## The interface
-
-This is just an web interface of the BT Trafic Detector.  
-It consumes a CSV (Comma Separated Value) file, that, currently must be named **`cap.csv`**
-
-It is built on [Node.JS](https://nodejs.org/en/) using [Socket.io](https://github.com/user/repo/blob/branch/other_file.md) and [React](https://facebook.github.io/react/) 
-
-## Dependencies
-
-To run the web interface you will need to have Node.JS installed 
-We strongly recomend installing node through the [Node Version Manager](https://github.com/creationix/nvm)
-
-### Linux
-Either way ** Do not try `apt-get install nodejs` **
-The repo is too old and not updated
-
-[User this instead](http://workshop.botter.ventures/2015/10/23/how-to-install-node-js-using-nvm-on-ubuntu/)
+# BitTorrentDetector
+BitTorrent traffic detector. Project made for the FCS (Forensics Cyber-Security) course in the first semester of 2016.
 
 ## Instalation
-
-After you have Node.js Installed (make sure to be on the correct branch :$ ):
 ```
 $ git clone https://github.com/pedrofran12/BitTorrentDetector
 $ cd BitTorrentDetector
-$ git checkout feature/interface
 ```
 
-Install all the node dependencies
+Install requirements
+```
+$ apt-get install python python-pip tshark
+$ pip install -r requirements.txt
+```
+(it might need to run as sudo to install those)
+
+To run the web interface, you will need to have Node.JS installed
+We strongly recommend installing node through the [Node Version Manager](https://github.com/creationix/nvm)
+
+After intall Node.JS, install all the node dependencies
 ```
 $ npm install
 ```
-If it takes too long use yarn
-`npm install yarn -g` then use `yarn` as regular `npm`
 
 ## Usage
+```
+$ python main.py
+```
+(you migth need sudo privileges to perform a live capture)
 
-`npm run test` this continuously generates a CSV (`cap.csv`) and then runs the interface over it
-
+To use the web interface, you will need to start Node.JS local server
+```
+$ cd interface
+$ npm run start
+```
 
 ## Authors
+[Pedro Oliveira @pedrofran12](https://github.com/pedrofran12)
+[Luís Duarte @luisrafael1995](https://github.com/luisrafael1995)
 [Joao Tiago @johnytiago](https://github.com/johnytiago)

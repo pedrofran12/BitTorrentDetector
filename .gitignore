@@ -1,3 +1,7 @@
+log.txt
+btd.db
+btd.db-journal
+*.pyc
 node_modules
 npm-debug.log
 .DS_Store

@@ -28,11 +28,12 @@ export default class App extends Component {
         <Table responsive>
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Src IP</th>
-              <th>Src MAC</th>
+              <th>IP</th>
+              <th>MAC</th>
               <th>Host Name</th>
               <th>Torrent Hash</th>
+              <th>Torren Description</th>
+              <th>Date</th>
               <th>Type of Detection</th>
             </tr>
           </thead>
