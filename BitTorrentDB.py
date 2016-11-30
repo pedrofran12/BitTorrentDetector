@@ -13,7 +13,7 @@ TABLE = "packets"
 
 # Encrypted traffic:
 # every MINUTES_TO_CHECK_ENCRYPTED_TRAFFIC minutes check for Encrypted traffic
-MINUTES_TO_CHECK_ENCRYPTED_TRAFFIC = 3 #check this
+MINUTES_TO_CHECK_ENCRYPTED_TRAFFIC = 2 #check this
 MINIMUM_NUMBER_OF_PORTS_TO_CONSIDER_BITTORRENT_TRAFFIC = 150
 
 

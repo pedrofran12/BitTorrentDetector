@@ -37,7 +37,7 @@ class Gui:
         table = Texttable()
         table.set_cols_align(["c", "c", "c", "c", "c", "c", "c"])
         table.set_cols_width([15, 17, 8, 30, 30, 19, 17])
-        fd = open(fileName, 'r')
+        fd = open(filename, 'r')
         lines = fd.readlines()
         fd.close()
         for i in range(len(lines)):
