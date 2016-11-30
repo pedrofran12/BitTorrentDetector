@@ -2,6 +2,7 @@ import os
 import csv
 import threading
 import webbrowser
+from texttable import Texttable
 
 filename = "interface/cap.csv"
 url = "http://localhost:3000"
