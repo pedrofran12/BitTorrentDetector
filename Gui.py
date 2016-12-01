@@ -2,10 +2,15 @@ import os
 import csv
 import threading
 import webbrowser
+import subprocess
+import time
+import os
+import signal
 from texttable import Texttable
 
 filename = "interface/cap.csv"
 url = "http://localhost:3000"
+command = "cd interface && npm run start"
 
 def clearFile():
     fd = open(filename, 'w')
@@ -22,6 +27,8 @@ def writeRow(row):
 class Gui:
     def __init__(self):
         self.lock = threading.Lock()
+        self.process = subprocess.Popen(command, shell=True, preexec_fn=os.setsid)
+        time.sleep(5)
         clearFile()
         writeRow(["ip", "mac", "host", "hash", "description", "date", "detectiontype"])
         webbrowser.open_new(url)
@@ -34,6 +41,7 @@ class Gui:
         return
 
     def finish(self):
+        os.killpg(self.process.pid, signal.SIGTERM)
         table = Texttable()
         table.set_cols_align(["c", "c", "c", "c", "c", "c", "c"])
         table.set_cols_width([15, 17, 8, 30, 30, 19, 17])

@@ -114,14 +114,16 @@ def handleTable(packet):
         ui.writeLine(packetInfo)
     return
 
-def signal_handler(signal, frame):
+def end_program(signal=None, frame=None):
+    global check
     global start_time
     global RUN
-    RUN = False
-    ui.finish()
     print("Execution time: %s seconds" % (time.time() - start_time))
+    RUN = False
+    if check != None:
+        check.join()
+    ui.finish()
     sys.exit(0)
-
 
 def check_encrypted_traffic():
     global db
@@ -200,7 +202,7 @@ NUMBER_OF_THREADS = multiprocessing.cpu_count() * 2
 capture = typeOfCaptureDetection()
 db = BitTorrentDB()
 ui = chooseUI()
-signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGINT, end_program)
 threadArray = [None] * NUMBER_OF_THREADS
 detections = []
 start_time = time.time()
@@ -233,8 +235,4 @@ for packet in capture:
 
 sys.stdout.write("\n")
 sys.stdout.flush()
-print("Execution time: %s seconds" % (time.time() - start_time))
-RUN = False
-if check != None:
-    check.join()
-ui.finish()
+end_program()
