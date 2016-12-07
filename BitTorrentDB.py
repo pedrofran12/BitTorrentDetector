@@ -11,10 +11,16 @@ PASSWORD = ""
 DATABASE = "csf"
 TABLE = "packets"
 
-# Encrypted traffic:
-# every MINUTES_TO_CHECK_ENCRYPTED_TRAFFIC minutes check for Encrypted traffic
-MINUTES_TO_CHECK_ENCRYPTED_TRAFFIC = 2 #check this
+# flow bittorrent check
+#not encrypted traffic:
+# every MINUTES_TO_CHECK_BITTORRENT_TRAFFIC minutes check for bittorrent traffic
+MINUTES_TO_CHECK_BITTORRENT_TRAFFIC = 2
 MINIMUM_NUMBER_OF_PORTS_TO_CONSIDER_BITTORRENT_TRAFFIC = 150
+#encrypted traffic:
+MAXIMUM_NUMBER_OF_PORTS_TO_CONSIDER_VPN_TRAFFIC = 10
+MINIMUM_NUMBER_OF_PORTS_TO_CONSIDER_VPN_TRAFFIC = 2
+MINIMUM_NUMBER_OF_PACKETS_TO_CONSIDER_VPN_BITTORRENT_TRAFFIC = 190
+MINIMUM_MEAN_PACKET_LENGTH_TO_CONSIDER_VPN_BITTORRENT_TRAFFIC = 512
 
 
 def get_connection(db=DATABASE):
@@ -60,7 +66,7 @@ class BitTorrentDB:
         except Exception:
             mac_src = '?'
             mac_dst = '?'
-        packet_length = packet.captured_length #check if this is the best length for the packet
+        packet_length = packet.captured_length
         date = str(packet.sniff_time.strftime("%Y-%m-%d %H:%M:%S.%f"))
         get_connection().execute('INSERT INTO packets VALUES (%s,%s,%s,%s,%s,%s,%s,str_to_date(%s, %s))', ip_src, ip_dst, mac_src, mac_dst, port_src, port_dst, packet_length, date, "%Y-%m-%d %H:%i:%s.%f")
 
@@ -100,8 +106,6 @@ class BitTorrentDB:
 
 
     def check_traffic(self):
-        number_of_ports = MINIMUM_NUMBER_OF_PORTS_TO_CONSIDER_BITTORRENT_TRAFFIC
-        minutes_to_check = MINUTES_TO_CHECK_ENCRYPTED_TRAFFIC
         date = self.get_max_date()
         query = "SELECT C.ip, C.mac, STR_TO_DATE(%s, %s) AS date, COUNT(*) AS Number_Packets, SUM(C.packet_size) AS Generated_Traffic_Per_Port \
                  FROM ( \
@@ -114,9 +118,13 @@ class BitTorrentDB:
                        WHERE B.date > (SELECT DATE_SUB(STR_TO_DATE(%s, %s), INTERVAL %s MINUTE)) \
                        ) AS C \
                  GROUP BY C.ip, C.mac \
-                 HAVING COUNT(DISTINCT C.port) > %s OR (((COUNT(DISTINCT C.port) < 10 AND COUNT(DISTINCT C.port) >= 2) OR SUM(C.port) = 0) AND COUNT(*) > 190 AND SUM(C.packet_size)/COUNT(*) >= 512)"
+                 HAVING COUNT(DISTINCT C.port) > %s OR \
+                        (((COUNT(DISTINCT C.port) < %s AND COUNT(DISTINCT C.port) >= %s) OR SUM(C.port) = 0) AND COUNT(*) > %s AND SUM(C.packet_size)/COUNT(*) >= %s)"
 
-        response = get_connection().query(query, date, "%Y-%m-%d %H:%i:%s", date, "%Y-%m-%d %H:%i:%s.%f", minutes_to_check, date,"%Y-%m-%d %H:%i:%s.%f", minutes_to_check, number_of_ports)
+        response = get_connection().query(query, date, "%Y-%m-%d %H:%i:%s", date, "%Y-%m-%d %H:%i:%s.%f", MINUTES_TO_CHECK_BITTORRENT_TRAFFIC, date,\
+                                            "%Y-%m-%d %H:%i:%s.%f", MINUTES_TO_CHECK_BITTORRENT_TRAFFIC, MINIMUM_NUMBER_OF_PORTS_TO_CONSIDER_BITTORRENT_TRAFFIC, \
+                                            MAXIMUM_NUMBER_OF_PORTS_TO_CONSIDER_VPN_TRAFFIC, MINIMUM_NUMBER_OF_PORTS_TO_CONSIDER_VPN_TRAFFIC, \
+                                            MINIMUM_NUMBER_OF_PACKETS_TO_CONSIDER_VPN_BITTORRENT_TRAFFIC, MINIMUM_MEAN_PACKET_LENGTH_TO_CONSIDER_VPN_BITTORRENT_TRAFFIC)
         print 'check_traffic:', response
         if(len(response) == 0):
             raise Exception('no traffic detected')
