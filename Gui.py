@@ -4,7 +4,6 @@ import threading
 import webbrowser
 import subprocess
 import time
-import os
 import signal
 from texttable import Texttable
 

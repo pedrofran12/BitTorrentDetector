@@ -1,4 +1,6 @@
 from memsql.common import database
+import threading
+import time
 
 # Specify connection information for a MemSQL node
 HOST = "127.0.0.1"
@@ -22,6 +24,9 @@ MINIMUM_NUMBER_OF_PORTS_TO_CONSIDER_VPN_TRAFFIC = 2
 MINIMUM_NUMBER_OF_PACKETS_TO_CONSIDER_VPN_BITTORRENT_TRAFFIC = 190
 MINIMUM_MEAN_PACKET_LENGTH_TO_CONSIDER_VPN_BITTORRENT_TRAFFIC = 512
 
+#clean database
+NUMBER_OF_DAYS_TO_RETAIN_PACKETS = 1
+NUMBER_OF_SECONDS_TO_RETAIN_PACKETS = NUMBER_OF_DAYS_TO_RETAIN_PACKETS*24*60*60
 
 def get_connection(db=DATABASE):
     """ Returns a new connection to the database. """
@@ -39,7 +44,10 @@ class BitTorrentDB:
             conn.query('DROP TABLE IF EXISTS %s' % TABLE)
             conn.query('CREATE TABLE IF NOT EXISTS %s (ip_src VARCHAR(100), ip_dst VARCHAR(100), mac_src VARCHAR(17), mac_dst VARCHAR(17), port_src MEDIUMINT, port_dst MEDIUMINT, packet_size INT, date DATETIME(6))' % TABLE)
 
-
+        #Everyday clean database
+        check = threading.Thread(target=self.clean_database)
+        check.setDaemon(True)
+        check.start()
 
     def add_info_table(self, packet):
         try:
@@ -139,3 +147,14 @@ class BitTorrentDB:
             #Just one answer from DB
             return response[0].Max_Date
         raise Exception('No Info On Database')
+
+
+    def clean_database(self):
+        while True:
+            print 'clean'
+            date = self.get_max_date()
+            query = "DELETE FROM packets \
+                     WHERE date < (SELECT DATE_SUB(STR_TO_DATE(%s, %s), INTERVAL %s DAY))"
+            response = get_connection().query(query, date, "%Y-%m-%d %H:%i:%s", NUMBER_OF_DAYS_TO_RETAIN_PACKETS)
+            time.sleep(NUMBER_OF_SECONDS_TO_RETAIN_PACKETS)
+        return
