@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import pyshark
 import socket
 import netifaces
@@ -11,6 +12,7 @@ from BitTorrentDB import BitTorrentDB
 import threading
 import readline, glob
 import multiprocessing
+import argparse
 def complete(text, state):
     return (glob.glob(text+'*')+[None])[state]
 #File path autocomplete
@@ -29,7 +31,9 @@ def getInterfaces():
 
 
 def getFileCapture():
-    isFile = False
+    global args
+    fileName = args.options
+    isFile = os.path.isfile(fileName)
     while (not isFile):
         fileName = raw_input('Nome/path do ficheiro de captura: ')
         isFile = os.path.isfile(fileName)
@@ -150,7 +154,10 @@ def check_encrypted_traffic():
 
 
 def chooseInterface():
+    global args
     interfaces = getInterfaces()
+    if args.options in interfaces:
+        return args.options
     def printInterfaces():
         print 'Indique a(s) interface(s) de captura:'
         for i in range(len(interfaces)):
@@ -175,27 +182,44 @@ def chooseInterface():
 
 
 def chooseUI():
+    global args
+    inputValue = ''
     while True:
-        inputValue = raw_input('Escolha UI:\n1 - Linha de comandos\n2 - Interface grafica\n')
-        if inputValue == '1':
+        if not args.ui:
+            inputValue = raw_input('Escolha UI:\n1 - Linha de comandos\n2 - Interface grafica\n')
+        if inputValue == '1' or args.ui == 'cli':
             return Cli()
-        elif inputValue == '2':
+        elif inputValue == '2' or args.ui == 'gui':
             return Gui()
 
 
 def typeOfCaptureDetection():
     global LIVE_CAPTURE_FLAG
+    global args
+    detectionType = ''
     while True:
-        detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
-        if detectionType == '1':
+        if not args.capture:
+            detectionType = raw_input('Escolha modo de funcionamento:\n1 - Deteccao em tempo real\n2 - Deteccao via ficheiro .pcap\n')
+        if detectionType == '1' or args.capture=='live':
             capture = pyshark.LiveCapture(interface=chooseInterface(), display_filter='ip.src!=ip.dst')
             capture.sniff_continuously()
             LIVE_CAPTURE_FLAG = True
             return capture
-        elif detectionType == '2':
+        elif detectionType == '2' or args.capture=='file':
             capture = pyshark.FileCapture(getFileCapture(), keep_packets=False)
             LIVE_CAPTURE_FLAG = False
             return capture
+
+parser = argparse.ArgumentParser(description='BitTorrent Traffic Detector. Check via capture file or interface.')
+parser.add_argument("-c", "--capture",
+                    choices = ["file", "live"],
+                    help="Capture type (using file capture or live capture with an interface)")
+parser.add_argument("-ui", "--ui",
+                    choices = ["cli", "gui"],
+                    help="User interface (CLI/GUI)")
+parser.add_argument("-o", "--options", default='',
+                    help="Options (path of capture file or interface name)")
+args = parser.parse_args()
 
 LIVE_CAPTURE_FLAG = False
 NUMBER_OF_THREADS = multiprocessing.cpu_count() * 2
