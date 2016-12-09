@@ -106,7 +106,7 @@ class BitTorrentDB:
                                                WHERE F.ip_dst=%s ) AS G \
                                         GROUP BY G.IP ) AS H)"
         response = get_connection().query(query, ip1, ip2, ip1, ip2)
-        print response
+        #print response
         if(len(response) == 1):
             #Just one answer from DB
             return response[0].IP
@@ -133,7 +133,7 @@ class BitTorrentDB:
                                             "%Y-%m-%d %H:%i:%s.%f", MINUTES_TO_CHECK_BITTORRENT_TRAFFIC, MINIMUM_NUMBER_OF_PORTS_TO_CONSIDER_BITTORRENT_TRAFFIC, \
                                             MAXIMUM_NUMBER_OF_PORTS_TO_CONSIDER_VPN_TRAFFIC, MINIMUM_NUMBER_OF_PORTS_TO_CONSIDER_VPN_TRAFFIC, \
                                             MINIMUM_NUMBER_OF_PACKETS_TO_CONSIDER_VPN_BITTORRENT_TRAFFIC, MINIMUM_MEAN_PACKET_LENGTH_TO_CONSIDER_VPN_BITTORRENT_TRAFFIC)
-        print 'check_traffic:', response
+        #print 'check_traffic:', response
         if(len(response) == 0):
             raise Exception('no traffic detected')
         return response
