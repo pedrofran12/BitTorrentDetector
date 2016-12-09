@@ -9,6 +9,7 @@ from texttable import Texttable
 
 filename = "interface/cap.csv"
 url = "http://localhost:3000"
+install_cmd = "cd interface && npm install"
 command = "cd interface && npm run start"
 
 def clearFile():
@@ -26,6 +27,8 @@ def writeRow(row):
 class Gui:
     def __init__(self):
         self.lock = threading.Lock()
+        p = subprocess.Popen(install_cmd, shell=True)
+        p.wait()
         self.process = subprocess.Popen(command, shell=True, preexec_fn=os.setsid)
         time.sleep(5)
         clearFile()
@@ -40,6 +43,7 @@ class Gui:
         return
 
     def finish(self):
+        time.sleep(5)
         os.killpg(self.process.pid, signal.SIGTERM)
         table = Texttable()
         table.set_cols_align(["c", "c", "c", "c", "c", "c", "c"])
@@ -47,7 +51,9 @@ class Gui:
         fd = open(filename, 'r')
         lines = fd.readlines()
         fd.close()
-        for i in range(len(lines)):
+        table.add_row(['IP', 'MAC', 'Hostname', 'Hash', 'Torrent Description',\
+			'Date', 'Type of Detection']);
+        for i in range(1, len(lines)):
             table.add_row(lines[i].split(','))
         target = open('log.txt', 'w')
         target.write(table.draw())
