@@ -151,7 +151,6 @@ class BitTorrentDB:
 
     def clean_database(self):
         while True:
-            print 'clean'
             date = self.get_max_date()
             query = "DELETE FROM packets \
                      WHERE date < (SELECT DATE_SUB(STR_TO_DATE(%s, %s), INTERVAL %s DAY))"
